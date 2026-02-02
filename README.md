@@ -91,16 +91,16 @@ Arduino UNO Q
 | Thermo Sensor | SDA/SCL | Temperature reading | 3.3V |
 
 ### Connection Diagrams
-```
-[Hardware Connection Diagram - To be added]
-Image placeholder: hardware_connections.png
 
-[System Architecture Diagram - To be added]  
-Image placeholder: system_architecture.png
+#### Hardware Assembly Process
+![Arduino Triage Setup Step 1](Images/Arduino%20-%20Triage3.png)
+*Initial component layout and preparation*
 
-[Demo Setup Photo - To be added]
-Image placeholder: demo_setup.jpg
-```
+![Arduino Triage Setup Step 2](Images/Arduino%20-%20Triage4.png)
+*Modulino sensors and wiring connections*
+
+![Arduino Triage Setup Step 3](Images/Arduino%20-%20Triage5.png)
+*Complete hardware assembly with all components connected*
 
 **Detailed wiring guide**: See `HARDWARE_CONNECTIONS.md` for step-by-step assembly instructions
 
@@ -315,6 +315,22 @@ Arduino-Triage/
 ---
 
 ## Development & Troubleshooting
+
+### System in Action
+![Arduino Triage Final Testing](Images/Arduino%20-%20Triage9.jpeg)
+*Complete system testing with all sensors active*
+
+![Arduino Triage Calibration Process](Images/Arduino%20-%20Triage10.jpeg)
+*Device calibration and sensor validation*
+
+![Arduino Triage Web Interface Demo](Images/Arduino%20-%20Triage11.jpeg)
+*Web dashboard showing real-time analysis*
+
+![Arduino Triage Clinical Workflow](Images/Arduino%20-%20Triage12.jpeg)
+*Demonstration of clinical examination workflow*
+
+![Arduino Triage Results Display](Images/Arduino%20-%20Triage13.jpeg)
+*Final results display with triage recommendations*
 
 ### Common Commands
 ```bash
