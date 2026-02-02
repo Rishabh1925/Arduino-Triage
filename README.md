@@ -1,3 +1,5 @@
+
+
 # Smart Rural Triage Station
 
 [![Arduino](https://img.shields.io/badge/Arduino-UNO%20Q-00979D?style=for-the-badge&logo=arduino&logoColor=white)](https://www.arduino.cc/)
