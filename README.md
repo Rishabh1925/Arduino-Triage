@@ -170,59 +170,60 @@ http://192.168.7.2:5000/api/status    # System status API
 ## Project Structure
 
 ```
-smart-triage-station/
+Arduino-Triage/
 ├── README.md                    # This file
-├── HARDWARE_CONNECTIONS.md      # Hardware assembly guide
-├── SHOPPING_LIST.txt           # Component purchasing guide
-├── .gitignore                  # Git ignore rules
+├── LICENSE.txt                  # MPL-2.0 License
+├── requirements.txt             # Python dependencies
+├── main.py                      # Main entry point
+├── .gitignore                   # Git ignore rules
 │
-├── docs/                       # Detailed documentation
+├── docs/                        # Detailed documentation (9 guides)
+│   ├── ARDUINO_UNO_Q_HARDWARE_GUIDE.md
 │   ├── COMPLETE_DEPLOYMENT_GUIDE.md
+│   ├── COMPLETE_SOFTWARE_GUIDE.md
 │   ├── ML_TRAINING_GUIDE.md
+│   ├── PHASE_1_HARDWARE.md
+│   ├── PHASE_2_AUDIO.md
+│   ├── PROJECT_WORKFLOW.md
 │   ├── SOFTWARE_ARCHITECTURE_GUIDE.md
-│   ├── DEMO_SCRIPT.md
-│   └── [8 more comprehensive guides]
+│   └── SOFTWARE_IMPLEMENTATION_GUIDE.md
 │
-├── hardware/                   # Hardware specifications
-│   └── pinmap.md              # Complete pin mapping
+├── Hardware-Connections/        # Hardware wiring guides
 │
-├── firmware/                   # Arduino MCU code
-│   └── main/
-│       └── main.ino           # Main MCU firmware (800+ lines)
+├── Final_deployment/            # Production-ready deployment
+│   ├── Firmware/               # Arduino MCU code
+│   │   └── main.ino            # Main MCU firmware
+│   ├── app.py                  # Flask web application
+│   ├── requirements.txt        # Deployment dependencies
+│   └── templates/              # Web UI templates
 │
-├── final_app/                  # Final integrated application
-│   └── final_app.ino          # Complete triage system
+├── Final_app/                   # Final integrated application
 │
-├── linux/                     # Python services & AI
-│   ├── core/                  # System management
-│   ├── hardware/              # Hardware interfaces  
-│   ├── audio/                 # Audio processing
-│   ├── ml/                    # Machine learning
-│   ├── triage/                # Decision logic
-│   ├── calibration/           # Device calibration
-│   └── web/                   # Web interface
+├── linux/                       # Python services & AI
+│   ├── core/                   # System management
+│   ├── hardware/               # Hardware interfaces
+│   ├── audio/                  # Audio processing
+│   ├── ml/                     # Machine learning
+│   ├── triage/                 # Decision logic
+│   ├── calibration/            # Device calibration
+│   └── web/                    # Web interface
 │
-├── models/                     # AI models
-│   ├── heart/                 # Heart sound models
-│   ├── lung/                  # Lung sound models
-│   └── README.md              # Model documentation
+├── models/                      # AI models
+│   ├── heart/                  # Heart sound models
+│   ├── lung/                   # Lung sound models
+│   ├── yamnet/                 # Audio classification
+│   └── README.md               # Model documentation
 │
-├── config/                     # Configuration files
-│   ├── system.yaml            # Main system config
-│   └── audio.yaml             # Audio settings
+├── config/                      # Configuration files
+│   ├── system.yaml             # Main system config
+│   └── audio.yaml              # Audio settings
 │
-├── examples/                   # Example Arduino code
-│   ├── 01_blink_builtin_led.ino
-│   ├── prototype_demo.ino
-│   └── simple_test.ino
+├── scripts/                     # Utility scripts
 │
-├── setup/                      # Installation scripts
-│   └── install.sh             # Automated setup (500+ lines)
+├── setup/                       # Installation scripts
+│   └── install.sh              # Automated setup
 │
-├── logs/                       # System logs
-│   └── .gitkeep               # Ensure directory exists
-│
-└── requirements.txt            # Python dependencies
+└── logs/                        # System logs
 ```
 
 ---
@@ -380,21 +381,21 @@ We welcome contributions! Here's how you can help:
 ### Development Setup
 ```bash
 # Clone repository
-git clone https://github.com/your-username/smart-triage-station.git
-cd smart-triage-station
+git clone https://github.com/Raja-89/Arduino-Triage.git
+cd Arduino-Triage
 
-# Follow setup instructions
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Follow setup instructions for device deployment
 bash setup/install.sh
-
-# Run tests
-python3 tests/system_test.py
 ```
 
 ---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)** - see the [LICENSE.txt](LICENSE.txt) file for details.
 
 ### Third-Party Licenses
 - TensorFlow Lite: Apache 2.0
