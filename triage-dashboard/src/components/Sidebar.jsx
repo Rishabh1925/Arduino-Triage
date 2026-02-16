@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, HeartPulse, Wind, Crosshair, ClipboardList,
-    Settings, Activity, Hospital
+    Settings, Activity, Hospital, Thermometer
 } from 'lucide-react';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
         section: 'Examinations', items: [
             { to: '/heart-exam', icon: HeartPulse, label: 'Heart Exam' },
             { to: '/lung-exam', icon: Wind, label: 'Lung Exam' },
+            { to: '/temp-exam', icon: Thermometer, label: 'Temp Exam' },
             { to: '/placement-guide', icon: Crosshair, label: 'Placement Guide' },
         ]
     },

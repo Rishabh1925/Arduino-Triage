@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
+import { useApi, apiPost } from '../hooks/useApi';
 import {
     HeartPulse, Wind, Thermometer, Activity, Volume2,
     Move, Gauge, ArrowRight, ShieldCheck, AlertTriangle, Zap,
@@ -7,7 +7,8 @@ import {
     Brain, Cpu, CheckCircle
 } from 'lucide-react';
 import { LineChart, Line, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { API_BASE } from '../utils/constants';
 
 export default function Dashboard({ status }) {
     const { data: sensorData } = useApi('/sensor-data', 1000);
@@ -15,6 +16,48 @@ export default function Dashboard({ status }) {
     const { data: models } = useApi('/models');
     const navigate = useNavigate();
 
+    // Measured values — initially null (shows -- until user clicks Measure)
+    const [measuredHeartRate, setMeasuredHeartRate] = useState(null);
+    const [measuredRespRate, setMeasuredRespRate] = useState(null);
+    const [measuredTemp, setMeasuredTemp] = useState(null);
+    const [measuring, setMeasuring] = useState({ hr: false, rr: false, temp: false });
+
+    // Track previous history length to detect new triage results
+    const prevHistoryLenRef = useRef(null);
+
+    // Auto-populate heart rate when a new heart exam result appears
+    useEffect(() => {
+        if (!history || history.length === 0) return;
+        if (prevHistoryLenRef.current === null) {
+            // First load — just record the initial length, don't auto-populate
+            prevHistoryLenRef.current = history.length;
+            return;
+        }
+        if (history.length > prevHistoryLenRef.current) {
+            // New triage added — check if it's a heart exam
+            const latest = history[0];
+            if (latest.type === 'heart' && latest.details?.heartRate) {
+                setMeasuredHeartRate(latest.details.heartRate);
+            }
+        }
+        prevHistoryLenRef.current = history.length;
+    }, [history]);
+
+    const measureValue = async (type) => {
+        setMeasuring(prev => ({ ...prev, [type]: true }));
+        try {
+            const res = await fetch(`${API_BASE}/sensor-data`);
+            const data = await res.json();
+            if (type === 'hr') setMeasuredHeartRate(data.heartRate);
+            if (type === 'rr') setMeasuredRespRate(data.respiratoryRate);
+            if (type === 'temp') setMeasuredTemp(data.temperature);
+        } catch (err) {
+            console.error('Measure failed:', err);
+        } finally {
+            // Small delay so the button feels responsive
+            setTimeout(() => setMeasuring(prev => ({ ...prev, [type]: false })), 400);
+        }
+    };
 
     const recentTriages = history?.slice(0, 5) || [];
 
@@ -38,21 +81,51 @@ export default function Dashboard({ status }) {
                     <div className="stat-icon red"><HeartPulse size={22} /></div>
                     <div className="stat-info">
                         <div className="stat-label">Heart Rate</div>
-                        <div className="stat-value">{sensorData?.heartRate || '--'} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>BPM</span></div>
+                        {measuredHeartRate !== null ? (
+                            <div className="stat-value">{measuredHeartRate} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>BPM</span></div>
+                        ) : (
+                            <button
+                                className="btn btn-sm"
+                                style={{ marginTop: 4, fontSize: '0.75rem', padding: '4px 12px', background: 'var(--cardiac-red)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                                onClick={() => navigate('/heart-exam')}
+                            >
+                                Measure
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon blue"><Wind size={22} /></div>
                     <div className="stat-info">
                         <div className="stat-label">Respiratory Rate</div>
-                        <div className="stat-value">{sensorData?.respiratoryRate || '--'} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/min</span></div>
+                        {measuredRespRate !== null ? (
+                            <div className="stat-value">{measuredRespRate} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/min</span></div>
+                        ) : (
+                            <button
+                                className="btn btn-sm"
+                                style={{ marginTop: 4, fontSize: '0.75rem', padding: '4px 12px', background: 'var(--respiratory-blue)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                                onClick={() => navigate('/lung-exam')}
+                            >
+                                Measure
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="stat-card">
                     <div className="stat-icon amber"><Thermometer size={22} /></div>
                     <div className="stat-info">
                         <div className="stat-label">Temperature</div>
-                        <div className="stat-value">{sensorData?.temperature || '--'}°C</div>
+                        {measuredTemp !== null ? (
+                            <div className="stat-value">{measuredTemp}°C</div>
+                        ) : (
+                            <button
+                                className="btn btn-sm"
+                                style={{ marginTop: 4, fontSize: '0.75rem', padding: '4px 12px', background: 'var(--warning-amber)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
+                                onClick={() => navigate('/temp-exam')}
+                            >
+                                Measure
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -94,7 +167,26 @@ export default function Dashboard({ status }) {
                             </button>
                             <button
                                 className="btn btn-secondary btn-lg"
-                                style={{ width: '100%', justifyContent: 'space-between' }}
+                                style={{
+                                    width: '100%', justifyContent: 'space-between',
+                                    background: 'linear-gradient(135deg, var(--warning-amber), #d97706)',
+                                    color: 'white', borderColor: 'transparent',
+                                }}
+                                onClick={() => navigate('/temp-exam')}
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <Thermometer size={20} />
+                                    Measure Temperature
+                                </span>
+                                <ArrowRight size={18} />
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-lg"
+                                style={{
+                                    width: '100%', justifyContent: 'space-between',
+                                    background: '#F5E6CA',
+                                    color: '#5D4E37', borderColor: '#E8D5B5',
+                                }}
                                 onClick={() => navigate('/placement-guide')}
                             >
                                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
