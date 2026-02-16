@@ -413,6 +413,94 @@ app.post('/api/reset', async (req, res) => {
     res.json({ status: 'reset' });
 });
 
+// ═══════════════════ Tracker Proxy (Python MJPEG server on :5050) ═══════════════════
+
+const TRACKER_BACKEND = 'http://localhost:5050';
+
+// MJPEG feed — pipe the stream directly through
+app.get('/api/tracker/feed', async (req, res) => {
+    const mode = req.query.mode || 'heart';
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const upstream = await fetch(`${TRACKER_BACKEND}/feed?mode=${mode}`, {
+            signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!upstream.ok) {
+            return res.status(502).json({ error: 'Tracker not available' });
+        }
+
+        // Forward headers and pipe the MJPEG stream
+        res.setHeader('Content-Type', upstream.headers.get('content-type') || 'multipart/x-mixed-replace; boundary=frame');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        // Pipe Node.js readable stream to response
+        const reader = upstream.body.getReader();
+        const pump = async () => {
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done || res.destroyed) break;
+                    res.write(value);
+                }
+            } catch { /* stream ended */ }
+            res.end();
+        };
+        pump();
+
+        req.on('close', () => {
+            try { reader.cancel(); } catch { }
+        });
+    } catch {
+        res.status(502).json({ error: 'Tracker server not running. Start tracker_server.py first.' });
+    }
+});
+
+// Tracker status
+app.get('/api/tracker/status', async (req, res) => {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+        const resp = await fetch(`${TRACKER_BACKEND}/status`, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (resp.ok) {
+            const data = await resp.json();
+            return res.json({ ...data, available: true });
+        }
+    } catch { }
+    res.json({ available: false, mode: null, visited: {}, progress: 0 });
+});
+
+// Tracker reset
+app.post('/api/tracker/reset', async (req, res) => {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+        const resp = await fetch(`${TRACKER_BACKEND}/reset`, {
+            method: 'POST',
+            signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        if (resp.ok) return res.json(await resp.json());
+    } catch { }
+    res.json({ status: 'tracker_unavailable' });
+});
+
+// Tracker availability check
+app.get('/api/tracker/health', async (req, res) => {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 1500);
+        const resp = await fetch(`${TRACKER_BACKEND}/health`, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (resp.ok) return res.json({ available: true });
+    } catch { }
+    res.json({ available: false });
+});
+
 // Triage history
 app.get('/api/triage/history', (req, res) => {
     res.json(triageHistory);

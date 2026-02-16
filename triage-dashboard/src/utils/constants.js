@@ -39,5 +39,5 @@ export const EXAM_TYPES = {
   LUNG: 'lung',
 };
 
-// API base URL
-export const API_BASE = 'http://localhost:3001/api';
+// API base URL — relative so it works both in dev (via Vite proxy) and production (same-origin)
+export const API_BASE = '/api';

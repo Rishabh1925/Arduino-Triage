@@ -2,9 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useApi, apiPost } from '../hooks/useApi';
 import {
     Wind, Play, Square, RotateCcw, CheckCircle,
-    AlertTriangle, XCircle, Info, Stethoscope, Radio
+    AlertTriangle, XCircle, Info, Stethoscope, Radio,
+    Camera, CameraOff
 } from 'lucide-react';
 import ExamModal from '../components/ExamModal';
+import TrackerModal from '../components/TrackerModal';
+
 
 export default function LungExam({ status }) {
 
@@ -12,6 +15,22 @@ export default function LungExam({ status }) {
     const [examState, setExamState] = useState('idle');
     const [result, setResult] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [trackerAvailable, setTrackerAvailable] = useState(false);
+    const [showCamera, setShowCamera] = useState(false);
+
+    // Check tracker availability
+    useEffect(() => {
+        const check = async () => {
+            try {
+                const res = await fetch('/api/tracker/health');
+                const data = await res.json();
+                setTrackerAvailable(data.available);
+            } catch { setTrackerAvailable(false); }
+        };
+        check();
+        const interval = setInterval(check, 10000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Track previous mode to detect transitions
     const prevModeRef = useRef(status?.mode);
@@ -225,16 +244,22 @@ export default function LungExam({ status }) {
                 <div className="card" style={{ gridColumn: '1 / -1' }}>
                     <div className="card-header">
                         <h3 className="card-title"><Stethoscope size={16} style={{ marginRight: 6 }} />Lung Auscultation Points</h3>
+                        {trackerAvailable && (
+                            <button className="btn btn-sm btn-secondary" onClick={() => setShowCamera(true)}>
+                                <Camera size={14} /> Open Camera
+                            </button>
+                        )}
                     </div>
                     <div className="card-body" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                             {[
-                                { name: 'Right Upper', desc: 'Above clavicle, anterior' },
-                                { name: 'Left Upper', desc: 'Above clavicle, anterior' },
-                                { name: 'Right Middle', desc: '4th intercostal space, anterior' },
-                                { name: 'Left Middle', desc: '4th intercostal space, anterior' },
-                                { name: 'Right Lower', desc: 'Below 6th rib, midaxillary' },
-                                { name: 'Left Lower', desc: 'Below 6th rib, midaxillary' },
+                                { name: 'Right Apex', desc: 'Infraclavicular, right midclavicular' },
+                                { name: 'Left Apex', desc: 'Infraclavicular, left midclavicular' },
+                                { name: 'Right Upper', desc: '2nd intercostal space, anterior' },
+                                { name: 'Left Upper', desc: '2nd intercostal space, anterior' },
+                                { name: 'Right Middle', desc: '4th intercostal space, right midclavicular' },
+                                { name: 'Right Lower', desc: '6th intercostal space, right midclavicular' },
+                                { name: 'Left Lower', desc: '6th intercostal space, left midclavicular' },
                             ].map((p, i) => (
                                 <div key={i} style={{
                                     padding: '8px 12px', background: 'var(--bg-elevated)',
@@ -247,6 +272,9 @@ export default function LungExam({ status }) {
                     </div>
                 </div>
             </div>
+
+            {/* Fullscreen Tracker Modal */}
+            <TrackerModal isOpen={showCamera} mode="lung" onClose={() => setShowCamera(false)} />
         </div>
     );
 }

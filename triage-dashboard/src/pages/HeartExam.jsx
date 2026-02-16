@@ -2,9 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useApi, apiPost } from '../hooks/useApi';
 import {
     HeartPulse, Play, Square, RotateCcw, CheckCircle,
-    AlertTriangle, XCircle, Info, Stethoscope, Radio
+    AlertTriangle, XCircle, Info, Stethoscope, Radio,
+    Camera, CameraOff
 } from 'lucide-react';
 import ExamModal from '../components/ExamModal';
+import TrackerModal from '../components/TrackerModal';
+
 
 export default function HeartExam({ status }) {
 
@@ -12,6 +15,22 @@ export default function HeartExam({ status }) {
     const [examState, setExamState] = useState('idle'); // idle, examining, result
     const [result, setResult] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [trackerAvailable, setTrackerAvailable] = useState(false);
+    const [showCamera, setShowCamera] = useState(false);
+
+    // Check tracker availability
+    useEffect(() => {
+        const check = async () => {
+            try {
+                const res = await fetch('/api/tracker/health');
+                const data = await res.json();
+                setTrackerAvailable(data.available);
+            } catch { setTrackerAvailable(false); }
+        };
+        check();
+        const interval = setInterval(check, 10000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Track previous mode to detect transitions
     const prevModeRef = useRef(status?.mode);
@@ -21,17 +40,14 @@ export default function HeartExam({ status }) {
         const prevMode = prevModeRef.current;
 
         if (currentMode === 'EXAMINING' && prevMode !== 'EXAMINING') {
-            // Started new exam
             setExamState('examining');
             setResult(null);
             setIsModalOpen(true);
         } else if (currentMode === 'RESULT' && prevMode === 'EXAMINING') {
-            // Transitioned from Examining -> Result (Completion)
             setExamState('result');
             setResult(systemStatus.examResult);
             setIsModalOpen(true);
         } else if (currentMode === 'RESULT' && !result && systemStatus?.examResult) {
-            // Just loaded page and already have result (don't open modal, just show result)
             setExamState('result');
             setResult(systemStatus.examResult);
         }
@@ -75,27 +91,6 @@ export default function HeartExam({ status }) {
                 <p>Cardiac auscultation with AI-powered heart sound classification</p>
             </div>
 
-            {/* Exam Modal */}
-            <ExamModal
-                isOpen={examState === 'examining' || (examState === 'result' && !result)}
-                mode={examState === 'examining' ? 'EXAMINING' : 'RESULT'}
-                onClose={() => setExamState('idle')} // Allow closing to browse (exam continues in bg)
-                onViewResults={() => {
-                    // Stay on page but show results (state is already 'result')
-                    // The modal will close naturally if we just render the result view
-                    // But effectively we want to just close the modal to see the underlying result view
-                    // actually, the requirement says "navigates to the result window". 
-                    // Since we are already on the exam page which shows results, we just close the modal.
-                    // However, let's make sure the modal only shows when necessary.
-                }}
-            />
-
-            {/* We need to adjust the Logic. 
-               The user wants: 
-               1. Start -> Popup "Check Hardware" (Close button available).
-               2. Hardware finishes -> Popup "Generic Complete" -> Click "View Results" -> Shows Result.
-            */}
-
             <ExamModal
                 isOpen={isModalOpen}
                 mode={examState === 'examining' ? 'EXAMINING' : 'RESULT'}
@@ -104,7 +99,7 @@ export default function HeartExam({ status }) {
             />
 
             <div className="grid-2">
-                {/* Exam Control (Full Width now?) or keep 2 columns but remove Live Readings */}
+                {/* Exam Control */}
                 <div className="card" style={{ gridColumn: '1 / -1' }}>
                     <div className="card-header">
                         <h3 className="card-title"><HeartPulse size={16} color="var(--cardiac-red)" style={{ marginRight: 6 }} />Examination Control</h3>
@@ -222,10 +217,15 @@ export default function HeartExam({ status }) {
                     </div>
                 </div>
 
-                {/* Positioning Guide (Full Width or Side?) --> Keep logical flow, maybe just put it below */}
+                {/* Auscultation Points + Camera */}
                 <div className="card" style={{ gridColumn: '1 / -1' }}>
                     <div className="card-header">
                         <h3 className="card-title"><Stethoscope size={16} style={{ marginRight: 6 }} />Heart Auscultation Points</h3>
+                        {trackerAvailable && (
+                            <button className="btn btn-sm btn-secondary" onClick={() => setShowCamera(true)}>
+                                <Camera size={14} /> Open Camera
+                            </button>
+                        )}
                     </div>
                     <div className="card-body" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
@@ -247,7 +247,9 @@ export default function HeartExam({ status }) {
                     </div>
                 </div>
             </div>
+
+            {/* Fullscreen Tracker Modal */}
+            <TrackerModal isOpen={showCamera} mode="heart" onClose={() => setShowCamera(false)} />
         </div>
     );
 }
-
